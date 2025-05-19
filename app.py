@@ -14,60 +14,57 @@ st.set_page_config(
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
-    html, body, [class*="css"] { font-family: 'Poppins', sans-serif; }
-    [data-testid="stSidebar"] { background-color: #F3F2EF; }
+  html, body, [class*="css"] { font-family: 'Poppins', sans-serif; }
+  [data-testid="stSidebar"] { background-color: #F3F2EF; }
 </style>
 """, unsafe_allow_html=True)
 
 # --- 1. Scoring function ---
 def calculate_score(steps):
-    if steps < 8000:
-        return steps
-    if steps >= 15000:
-        return 23000
+    if steps < 8000: return steps
+    if steps >= 15000: return 23000
     return 16000 + (steps - 8000)
 
-# --- 2. Sidebar: upload & filters ---
+# --- 2. Sidebar: demo + upload & filters ---
+SAMPLE_DATA_PATH = "walkathon_daily_long.csv"
+
 with st.sidebar:
-    st.header("🔄 Upload & Filter")
-    uploaded = st.file_uploader(
-        "CSV/Excel (Date, Participant, Team, Steps)",
-        type=["csv","xlsx"]
+    st.markdown("<h3 style='color:black;'>🔄 Upload & Filter</h3>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='color:black;'>Upload your Walkathon data (CSV/Excel), or use our demo dataset below.</p>",
+        unsafe_allow_html=True
     )
-    if not uploaded:
-        st.info("Please upload your long-format Walkathon data.")
+
+    use_demo = st.checkbox("🗃️ Use demo dataset", value=False)
+    uploaded = None if use_demo else st.file_uploader(label="", type=["csv","xlsx"])
+
+    if use_demo:
+        df = pd.read_csv(SAMPLE_DATA_PATH, parse_dates=["Date"])
+    elif uploaded:
+        if uploaded.name.endswith(".csv"):
+            df = pd.read_csv(uploaded, parse_dates=["Date"])
+        else:
+            df = pd.read_excel(uploaded, parse_dates=["Date"], sheet_name="daily_wide", engine="openpyxl")
+            if "Participant" not in df.columns:
+                participants = [c for c in df.columns if c != "Date"]
+                df = df.melt(
+                    id_vars=["Date"],
+                    value_vars=participants,
+                    var_name="Participant",
+                    value_name="Steps"
+                ).dropna(subset=["Steps"])
+                team_map = {
+                    "Pranav":"Team 1","Akshra":"Team 1","Charishma":"Team 1","Yash":"Team 1","Vaishnavi":"Team 1",
+                    "Nisha":"Team 2","Pavana":"Team 2","Sakshi":"Team 2","Muskan":"Team 2","Ojasvi":"Team 2",
+                    "Ritesh":"Team 3","Pravat":"Team 3","Pragya":"Team 3","Divyam":"Team 3","Kasis":"Team 3",
+                    "Murali":"Team 4","Surbhi":"Team 4","Ankita":"Team 4","Rohit":"Team 4","Vanshita":"Team 4"
+                }
+                df["Team"] = df["Participant"].map(team_map)
+    else:
+        st.info("Please upload a file or select the demo dataset.")
         st.stop()
 
-    # load data
-    if uploaded.name.endswith(".csv"):
-        df = pd.read_csv(uploaded, parse_dates=["Date"])
-    else:
-        df = pd.read_excel(uploaded, parse_dates=["Date"], sheet_name="daily_wide", engine="openpyxl")
-        # auto-melt if wide
-        if "Participant" not in df.columns:
-            participants = [c for c in df.columns if c != "Date"]
-            df = df.melt(
-                id_vars=["Date"],
-                value_vars=participants,
-                var_name="Participant",
-                value_name="Steps"
-            ).dropna(subset=["Steps"])
-            team_map = {
-                "Pranav": "Team 1", "Akshra": "Team 1", "Charishma": "Team 1",
-                "Yash": "Team 1", "Vaishnavi": "Team 1",
-                "Nisha": "Team 2", "Pavana": "Team 2", "Sakshi": "Team 2",
-                "Muskan": "Team 2", "Ojasvi": "Team 2",
-                "Ritesh": "Team 3", "Pravat": "Team 3", "Pragya": "Team 3",
-                "Divyam": "Team 3", "Kasis": "Team 3",
-                "Murali": "Team 4", "Surbhi": "Team 4", "Ankita": "Team 4",
-                "Rohit": "Team 4", "Vanshita": "Team 4"
-            }
-            df["Team"] = df["Participant"].map(team_map)
-
-    # compute score
     df["Score"] = df["Steps"].apply(calculate_score)
-
-    # filters
     teams = df["Team"].unique().tolist()
     sel_teams = st.multiselect("Team", teams, default=teams)
     min_date, max_date = df["Date"].min().date(), df["Date"].max().date()
