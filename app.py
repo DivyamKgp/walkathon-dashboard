@@ -155,10 +155,10 @@ with tab_indv:
         "Metric": ["Total","Average","Max","Min"],
         **{
             team: [
-                df_filt[df_filt["Team")==team]["Score"].sum(),
-                df_filt[df_filt["Team")==team]["Score"].mean(),
-                df_filt[df_filt["Team")==team]["Score"].max(),
-                df_filt[df_filt["Team")==team]["Score"].min(),
+                df_filt[df_filt["Team"]==team]["Score"].sum(),
+                df_filt[df_filt["Team"]==team]["Score"].mean(),
+                df_filt[df_filt["Team"]==team]["Score"].max(),
+                df_filt[df_filt["Team"]==team]["Score"].min(),
             ]
             for team in team_totals.index
         }
