@@ -42,7 +42,12 @@ with st.sidebar:
     if uploaded.name.lower().endswith('.csv'):
         df = pd.read_csv(uploaded, parse_dates=["Date"]);
     else:
-        df = pd.read_excel(uploaded, sheet_name='daily_wide', parse_dates=["Date"], engine='openpyxl')
+        df = pd.read_excel(
+            uploaded,
+            sheet_name='daily_wide',
+            parse_dates=["Date"],
+            engine='openpyxl'
+        )
         # Melt if wide
         if "Participant" not in df.columns:
             participants = [c for c in df.columns if c != "Date"]
@@ -122,7 +127,7 @@ with tab_team:
     st.subheader("📊 Score Distribution by Team")
     fig, ax = plt.subplots()
     ax.boxplot(
-        [df_filt[df_filt["Team"]==t]["Score"] for t in team_totals.index],
+        [df_filt[df_filt["Team"] == t]["Score"] for t in team_totals.index],
         labels=team_totals.index,
         vert=True
     )
@@ -139,7 +144,8 @@ with tab_indv:
     )
     st.dataframe(indv.style.format({"Score":"{:,}"}), height=500)
 
-# === Trends ===with tab_trends:
+# === Trends ===
+with tab_trends:
     st.subheader("📈 Cumulative Score Over Time")
     cum = (
         df_filt.groupby(["Date","Team"])["Score"]
@@ -155,10 +161,10 @@ with tab_indv:
         "Metric": ["Total","Average","Max","Min"],
         **{
             team: [
-                df_filt[df_filt["Team"]==team]["Score"].sum(),
-                df_filt[df_filt["Team"]==team]["Score"].mean(),
-                df_filt[df_filt["Team"]==team]["Score"].max(),
-                df_filt[df_filt["Team"]==team]["Score"].min(),
+                df_filt[df_filt["Team"] == team]["Score"].sum(),
+                df_filt[df_filt["Team"] == team]["Score"].mean(),
+                df_filt[df_filt["Team"] == team]["Score"].max(),
+                df_filt[df_filt["Team"] == team]["Score"].min(),
             ]
             for team in team_totals.index
         }
@@ -187,7 +193,7 @@ with tab_insights:
         color="Team",
         orientation="h",
         animation_frame="Day",
-        range_x=[0, race_df["Score"].max()*1.1],
+        range_x=[0, race_df["Score"].max() * 1.1],
         title="🏁 Team Score Race Over Time"
     )
     st.plotly_chart(fig_race, use_container_width=True)
@@ -210,7 +216,7 @@ with tab_insights:
             mode="gauge+number+delta",
             value=tot_steps,
             delta={"reference": goal},
-            gauge={"axis": {"range": [None, goal*1.2]}},
+            gauge={"axis": {"range": [None, goal * 1.2]}},
             title={"text": f"{team_name} Total Steps"}
         ))
         st.plotly_chart(fig_gauge, use_container_width=True)
@@ -218,7 +224,7 @@ with tab_insights:
     st.subheader("📅 Participant Heatmap")
     sel_person = st.selectbox("Choose a participant", sorted(df["Participant"].unique()))
     pcal = (
-        df_filt[df_filt["Participant"]==sel_person]
+        df_filt[df_filt["Participant"] == sel_person]
         .groupby("Date")["Steps"].sum().reset_index()
     )
     pcal["Weekday"] = pcal["Date"].dt.weekday
